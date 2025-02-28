@@ -2,6 +2,7 @@ package com.FirstJobMS.jobms.Job;
 
 import com.FirstJobMS.jobms.Job.Dto.JobWithCompanyDTO;
 import com.FirstJobMS.jobms.Job.External.Company;
+import com.FirstJobMS.jobms.Job.mapper.JobMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -17,25 +18,40 @@ public class JobServiceImpl implements IJobService {
     public JobRepository repo;
     private Long nextId = 1L;
 
-    public List<JobWithCompanyDTO> findAll() {
-        List<Job> jobs = repo.findAll();
-        List<JobWithCompanyDTO> jobWithCompanyDTOs = new ArrayList<>();
+    @Autowired //provide instance of RestTemplate during runtime
+    RestTemplate restTemplate;
 
+
+    public JobWithCompanyDTO ConvertToDTO(Job job) {
+/*        List<Job> jobs = repo.findAll();
+        List<JobWithCompanyDTO> jobWithCompanyDTOs = new ArrayList<>();
+ad
         RestTemplate  restTemplate = new RestTemplate();
 
         for(Job job : jobs) {
             JobWithCompanyDTO jobWithCompanyDTO = new JobWithCompanyDTO();
             jobWithCompanyDTO.setJob(job);
-
+*/
             Company company = restTemplate.getForObject("http://localhost:8081/companies" + job.getCompanyId(),
                     Company.class);
 
+            JobWithCompanyDTO jobWithCompanyDTO = JobMapper.mapToJobWithCompanyDTO(
+                    job, company);
+
             jobWithCompanyDTO.setCompany(company);
 
-            jobWithCompanyDTOs.add(jobWithCompanyDTO);
-        }
+        //    jobWithCompanyDTOs.add(jobWithCompanyDTO);
+       // }
 
-        return jobWithCompanyDTOs;
+        return jobWithCompanyDTO;
+    }
+
+    @Override
+    public List<JobWithCompanyDTO> findAll() {
+        List<Job> jobs = repo.findAll();
+                return jobs.stream()
+                        .map(this::ConvertToDTO)
+                        .toList();
     }
 
     public void createJob(Job job) {
@@ -44,8 +60,10 @@ public class JobServiceImpl implements IJobService {
     }
 
     @Override
-    public Job getJobById(Long id) {
-        return repo.findById(id).orElse(null);
+    public JobWithCompanyDTO getJobById(Long id) {
+        Job job = repo.findById(id).orElse(null);
+        return ConvertToDTO(job);
+
     }
 
     @Override
