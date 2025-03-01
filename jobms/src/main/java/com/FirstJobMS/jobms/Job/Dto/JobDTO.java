@@ -1,8 +1,11 @@
 package com.FirstJobMS.jobms.Job.Dto;
 
 import com.FirstJobMS.jobms.Job.External.Company;
+import com.FirstJobMS.jobms.Job.External.Review;
 
-public class JobWithCompanyDTO {
+import java.util.List;
+
+public class JobDTO {
     private Long id;
     private String title;
     private String description;
@@ -10,6 +13,15 @@ public class JobWithCompanyDTO {
     private String maxSalary;
     private String location;
     private Company company;
+    private List<Review> reviews;
+
+    public List<Review> getReviews() {
+        return reviews;
+    }
+
+    public void setReviews(List<Review> reviews) {
+        this.reviews = reviews;
+    }
 
     public String getDescription() {
         return description;
