@@ -8,18 +8,19 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
+@RequestMapping("companies")
 public class  CompanyController {
 
     @Autowired
     private ICompanyService service;
 
-    @GetMapping("companies")
+    @GetMapping
     public ResponseEntity<List<Company>> getAllCompanies(){
         return new ResponseEntity<>(service.getAllCompanies(),
                 HttpStatus.OK);
     }
 
-    @PutMapping("companies/{id}")
+    @PutMapping("/{id}")
     public ResponseEntity<String>  updateCompany(@PathVariable Long id,
                                                  @RequestBody Company company){
         service.updateCompany(company, id);
@@ -34,6 +35,7 @@ public class  CompanyController {
                 HttpStatus.CREATED);
     }
 
+    @DeleteMapping("{id}")
     public ResponseEntity<String> deleteCompany(@PathVariable Long id){
         boolean isDeleted = service.deleteCompanyById(id);
         if(isDeleted){

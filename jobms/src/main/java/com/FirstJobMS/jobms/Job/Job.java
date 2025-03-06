@@ -17,18 +17,16 @@ public class Job {
     public Job() {
     }
 
-    public Job(Long id, String title, String description, String minSalary, String maxSalary) {
-        this.id = id;
-        this.title = title;
+    public Job(Long companyId, String description, Long id, String location, String maxSalary, String minSalary, String title) {
+        this.companyId = companyId;
         this.description = description;
-        this.minSalary = minSalary;
-        this.maxSalary = maxSalary;
+        this.id = id;
         this.location = location;
+        this.maxSalary = maxSalary;
+        this.minSalary = minSalary;
+        this.title = title;
     }
 
-    public Job(long l, String testJob, String job, String number, String id, String loc) {
-        
-    }
 
     public Long getCompanyId() {
         return companyId;

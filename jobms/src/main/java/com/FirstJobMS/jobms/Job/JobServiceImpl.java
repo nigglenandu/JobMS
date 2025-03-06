@@ -77,7 +77,7 @@ ad
     }
 
     public void createJob(Job job) {
-        job.setId(nextId++);
+//        job.setId(nextId++);
         repo.save(job);
     }
 
