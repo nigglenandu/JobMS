@@ -6,6 +6,8 @@ import com.FirstJobMS.jobms.Job.External.Review;
 import com.FirstJobMS.jobms.Job.clients.CompanyClient;
 import com.FirstJobMS.jobms.Job.clients.ReviewClient;
 import com.FirstJobMS.jobms.Job.mapper.JobMapper;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
@@ -13,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -25,6 +28,8 @@ public class JobServiceImpl implements IJobService {
 
     @Autowired //provide instance of RestTemplate during runtime
     RestTemplate restTemplate;
+
+    int attempt = 0;
 
     @Autowired
     private CompanyClient companyClient;
@@ -69,12 +74,24 @@ ad
     }
 
     @Override
+//    @CircuitBreaker(name = "companyBreaker",
+    //    fallbackMethod = "companyBreakerFallback")
+    @Retry(name = "companyBreaker",
+            fallbackMethod = "companyBreakerFallback")
     public List<JobDTO> findAll() {
+        System.out.println("attempt: " + ++attempt);
         List<Job> jobs = repo.findAll();
                 return jobs.stream()
                         .map(this::ConvertToDTO)
                         .toList();
     }
+
+    public List<String> companyBreaker(Exception e){
+        List<String> list = new ArrayList<>();
+        list.add("Dummy");
+        return list;
+    }
+
 
     public void createJob(Job job) {
 //        job.setId(nextId++);
