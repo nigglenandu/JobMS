@@ -1,6 +1,8 @@
 package com.FJobMS.companyms.Company;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import com.FJobMS.companyms.Company.clients.ReviewClient;
+import com.FJobMS.companyms.Company.dto.ReviewMessage;
+import jakarta.ws.rs.NotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -8,8 +10,13 @@ import java.util.Optional;
 
 @Service
 public class CompanyServiceImpl implements ICompanyService{
-    @Autowired
-    CompanyRepository Repo;
+    private CompanyRepository Repo;
+    private ReviewClient reviewClient;
+
+    public CompanyServiceImpl(CompanyRepository repo, ReviewClient reviewClient) {
+        this.Repo = repo;
+        this.reviewClient = reviewClient;
+    }
 
     @Override
     public List<Company> getAllCompanies() {
@@ -48,4 +55,15 @@ public class CompanyServiceImpl implements ICompanyService{
     public Company getCompanyById(Long id) {
         return Repo.findById(id).orElse(null);
     }
+
+    @Override
+    public void updateCompanyRating(ReviewMessage reviewMessage) {
+        System.out.println(reviewMessage.getDescription());
+
+        Company company = Repo.findById(reviewMessage.getCompanyId())
+                .orElseThrow(() -> new NotFoundException("Company not found" + reviewMessage.getCompanyId()));
+        double averageRating = reviewClient.getAverageRatingForCompany(reviewMessage.getCompanyId());
+        company.setRating(averageRating);
+        Repo.save(company);
+        }
 }
