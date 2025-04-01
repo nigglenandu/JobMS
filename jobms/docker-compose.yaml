@@ -1,40 +1,140 @@
-version: '3'
+#version: '3'
+#services:
+#
+#  mysqljob:
+#    container_name: nigglenandu/mysqljob:latest
+#    image: mysqljob
+#    environment:
+#
+#  config-server-ms:
+#    image: nigglenandu/configserver-ms:latest
+#    container_name: config-server-ms
+#    ports:
+#      - 8080:8080
+#    depends_on:
+#      - servicereg
+#
+#
+#  jobms:
+#    image: nigglenandu/jobappimage:latest
+#    container_name: JobMicroService
+#    ports:
+#      - "8082:8082"
+#    environment:
+#      - SPRING_APPLICATION_NAME=JobMicroService
+#      - SERVER_PORT=8082
+#      - SPRING_H2_CONSOLE_ENABLED=true
+#      - SPRING_DATASOURCE_URL=jdbc:h2:mem:test
+#      - SPRING_JPA_SHOW_SQL=true
+#      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+#      - SPRING_ZIPKIN_BASE_URL=http://zipkin:9411/
+#    networks:
+#      - mynetwork
+#    depends_on:
+#      - zipkin
+#
+#  zipkin:
+#    image: openzipkin/zipkin:latest
+#    container_name: zipkin
+#    ports:
+#      - "9411:9411"
+#    networks:
+#      - mynetwork
+#
+#  rabbitmq:
+#    image: rabbitmq:3-management
+#    container_name: rabbitmq
+#    ports:
+#      - "5672:5672"
+#      - "15672:15672"
+#    networks:
+#      - mynetwork
+#
+#networks:
+#  mynetwork:
+#    driver: bridge
+
+version: '3.8'
+
 services:
-  jobms:
-    image: nigglenandu/jobappimage:latest
-    container_name: JobMicroService
-    ports:
-      - "8082:8082"
+  mysql:
+    image: mysql:8
+    container_name: mysql-company
+    restart: always
     environment:
-      - SPRING_APPLICATION_NAME=JobMicroService
-      - SERVER_PORT=8082
-      - SPRING_H2_CONSOLE_ENABLED=true
-      - SPRING_DATASOURCE_URL=jdbc:h2:mem:test
-      - SPRING_JPA_SHOW_SQL=true
-      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
-      - SPRING_ZIPKIN_BASE_URL=http://zipkin:9411/
+      MYSQL_ROOT_PASSWORD: 18@13sql
+      MYSQL_USER: root
+      MYSQL_PASSWORD: 18@13sql
+    ports:
+      - "3007:3006"
+    volumes:
+      - mysql_data:/var/lib/mysql
     networks:
-      - mynetwork
+      - company_network
+
+  company-service:
+    image: nigglenandu/companyms:latest
+    container_name: company-service
     depends_on:
+      - mysql
+      - serviceregjob
       - zipkin
+      - rabbitmq
+    environment:
+      SPRING_APPLICATION_NAME: company-service
+      SERVER_PORT: 8081
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/companyms
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: 18@13sql
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: com.mysql.cj.jdbc.Driver
+      SPRING_JPA_HIBERNATE_DDL_AUTO: create-drop
+      SPRING_JPA_OPEN_IN_VIEW: "false"
+      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.MySQL8Dialect
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      MANAGEMENT_TRACING_SAMPLING_PROBABILITY: 1.0
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: guest
+      SPRING_RABBITMQ_PASSWORD: guest
+    ports:
+      - "8081:8081"
+    networks:
+      - company_network
+
+  serviceregjob:
+    image: nigglenandu/serviceregjob:latest
+    container_name: serviceregjob
+    restart: always
+    ports:
+      - "8761:8761"
+    networks:
+      - company_network
 
   zipkin:
     image: openzipkin/zipkin:latest
     container_name: zipkin
+    restart: always
     ports:
       - "9411:9411"
     networks:
-      - mynetwork
+      - company_network
 
   rabbitmq:
     image: rabbitmq:3-management
     container_name: rabbitmq
+    restart: always
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
     ports:
       - "5672:5672"
       - "15672:15672"
     networks:
-      - mynetwork
+      - company_network
+
+volumes:
+  mysql_data:
 
 networks:
-  mynetwork:
+  company_network:
     driver: bridge
