@@ -7,7 +7,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 import java.util.List;
 
-@FeignClient(name = "reviewms")
+@FeignClient(name = "review-service",
+        url ="${review-service.url}" )
 public interface ReviewClient {
     @GetMapping("/reviews")
     List<Review> getReviews(@PathVariable("companyId") Long CompanyId);
