@@ -54,87 +54,148 @@
 #  mynetwork:
 #    driver: bridge
 
+#version: '3.8'
+#
+#services:
+#  mysqljob:
+#    image: mysql:8
+#    container_name: mysql
+#    ports:
+#      - "3006:3306"
+#    environment:
+#      MYSQL_USER: root
+#      MYSQL_PASSWORD: 18@13sql
+#    volumes:
+#      - mysql_data:/var/lib/mysql
+#    networks:
+#      - mysqljob
+#
+#  review-service:
+#    image: nigglenandu/reviewms:latest
+#    ports:
+#      - "8083:8083"
+#    environment:
+#      SPRING_APPLICATION_NAME: review-service
+#      SPRING_DATASOURCE_URL: jdbc:mysql://mysqljob:3306/reviewms
+#      SPRING_DATASOURCE_USERNAME: root
+#      SPRING_DATASOURCE_PASSWORD: 18@13sql
+#      SPRING_JPA_HIBERNATE_DDL_AUTO: create-drop
+#      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.MySQL8Dialect
+#      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://serviceregjob:8761/eureka/
+#      EUREKA_CLIENT_REGISTER_WITH_EUREKA: "true"
+#      EUREKA_CLIENT_FETCH_REGISTRY: "true"
+#      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/app/v2/spans
+#      MANAGEMENT_TRACING_SAMPLING_PROBABILITY: "1.0"
+#
+#  company-service:
+#    image: nigglenandu/companyms:latest
+#    container_name: companyms
+#    ports:
+#      - "8081:8081"
+#    depends_on:
+#      - serviceregjob
+#      - configserver-ms
+#    networks:
+#      - microservice-network
+#      - mysqljob
+#    environment:
+#      - SPRING_PROFILES_ACTIVE=docker
+#
+#  job-service:
+#    image: nigglenandu/jobms:latest
+#    container_name: jobms
+#    ports:
+#      - "8082:8082"
+#    depends_on:
+#      - serviceregjob
+#      - configserver-ms
+#    networks:
+#      - microservice-network
+#      - mysqljob
+#    environment:
+#      - SPRING_PROFILES_ACTIVE=docker
+#      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://servicereg:8061/eureka
+#
+#  serviceregjob:
+#    image: nigglenandu/serviceregjob:latest
+#    container_name: serviceregjob
+#    ports:
+#      - "8761:8761"
+#    depends_on:
+#      - rabbitmq
+#      - mysqljob
+#    networks:
+#      - microservice-network
+#      - mysqljob
+#
+#  configserver-ms:
+#    image: nigglenandu/configserver-ms:latest
+#    container_name: configserver-ms
+#    ports:
+#      - 8080:8080
+#    depends_on:
+#      - serviceregjob
+#    networks:
+#      - microservice-network
+#      - mysqljob
+#    environment:
+#      - SPRING_PROFILES_ACTIVE=docker
+#
+#  rabbitmq:
+#    image: rabbitmq:3-management
+#    ports:
+#      - "5672:5672"
+#      - "15672:15672"
+#    environment:
+#      RABBITMQ_DEFAULT_USER: guest
+#      RABBITMQ_DEFAULT_PASS: guest
+#
+#networks:
+#  microservice-network:
+#    driver: bridge
+#  mysqljob:
+#    driver: bridge
+#
+#volumes:
+#  mysql_data:
+
 version: '3.8'
 
 services:
-  mysql:
-    image: mysql:8
-    container_name: mysql-company
-    restart: always
-    environment:
-      MYSQL_ROOT_PASSWORD: 18@13sql
-      MYSQL_USER: root
-      MYSQL_PASSWORD: 18@13sql
+  review-service:
+    image: nigglenandu/review-service:latest
+    container_name: review-service
     ports:
-      - "3007:3006"
-    volumes:
-      - mysql_data:/var/lib/mysql
+      - "8083:8083"
+    environment:
+      SPRING_APPLICATION_NAME: review-service
+      SERVER_PORT: 8083
+      JOB_SERVICE_URL: http://job-service:8082
+      COMPANY_SERVICE_URL: http://company-service:8081
+      REVIEW_SERVICE_URL: http://review-service:8083
+      SPRING_DATASOURCE_URL: jdbc:h2:mem:testdb
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.h2.Driver
+      SPRING_DATASOURCE_USERNAME: sa
+      SPRING_DATASOURCE_PASSWORD: password
+      SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.H2Dialect
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_SHOW_SQL: "true"
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://serviceregjob:8761/eureka/
+      EUREKA_CLIENT_REGISTER_WITH_EUREKA: "true"
+      EUREKA_CLIENT_FETCH_REGISTRY: "true"
     networks:
-      - company_network
-
-  company-service:
-    image: nigglenandu/companyms:latest
-    container_name: company-service
+      - microservice-network
     depends_on:
-      - mysql
       - serviceregjob
-      - zipkin
-      - rabbitmq
-    environment:
-      SPRING_APPLICATION_NAME: company-service
-      SERVER_PORT: 8081
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/companyms
-      SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: 18@13sql
-      SPRING_DATASOURCE_DRIVER_CLASS_NAME: com.mysql.cj.jdbc.Driver
-      SPRING_JPA_HIBERNATE_DDL_AUTO: create-drop
-      SPRING_JPA_OPEN_IN_VIEW: "false"
-      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.MySQL8Dialect
-      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://eureka-server:8761/eureka/
-      MANAGEMENT_TRACING_SAMPLING_PROBABILITY: 1.0
-      SPRING_RABBITMQ_HOST: rabbitmq
-      SPRING_RABBITMQ_PORT: 5672
-      SPRING_RABBITMQ_USERNAME: guest
-      SPRING_RABBITMQ_PASSWORD: guest
-    ports:
-      - "8081:8081"
-    networks:
-      - company_network
 
   serviceregjob:
     image: nigglenandu/serviceregjob:latest
     container_name: serviceregjob
-    restart: always
     ports:
       - "8761:8761"
     networks:
-      - company_network
-
-  zipkin:
-    image: openzipkin/zipkin:latest
-    container_name: zipkin
-    restart: always
-    ports:
-      - "9411:9411"
-    networks:
-      - company_network
-
-  rabbitmq:
-    image: rabbitmq:3-management
-    container_name: rabbitmq
-    restart: always
-    environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-    networks:
-      - company_network
-
-volumes:
-  mysql_data:
+      - microservice-network
 
 networks:
-  company_network:
+  microservice-network:
     driver: bridge
